@@ -1,0 +1,134 @@
+// To start pig in a local mode from where we can access only the Local File System.
+pig -x local
+
+//To start pig in a HDFS mdoe from where we can access only the HDFS File System
+pig -x mapreduce
+
+// Pig willnever store data physically
+//Pig is Comparitively Slow with the MapReduce because it internally build the MapReduce program
+
+--- PIG DATA TYPES ---
+int
+float
+char
+double 
+bytearray - it is a DEFAULT datatype
+chararray
+bag - somewhat related to table name
+typle - somewhat like the whole record
+atom - it is a single value
+
+
+pig -help
+
+
+--- APACHE PIG - Word Count ---
+lines = LOAD 'user/root/pig_demo.txt' AS (line:chararray);
+words = FOREACH lines GENERATE FLATTEN(TOKENIZE(line)) AS word;
+groupped = GROUP words BY word;
+wordcount = FOREACH grouped GENERATE group, COUNT(words);
+DUMP wordcount;
+
+DESCRIBE grouped;
+EXPLAIN wordcount
+
+
+--- Counting number of records in Pig ---
+data1 = LOAD 'user/root/pig_demo.txt' AS (line:chararray);
+wrk_one = foreach data1 generate 1 as one;
+wrk_group = group wrk_one by one;
+wrk_count = foreach wrk_group generate group,  COUNT(wrk_one.one);
+dump wrk_count;
+
+
+-- Load data into pig without a schema
+departments = LOAD 'user/root/sqoop-improt/departments' USING PigStorage(',') AS (department_id:int, departmentName:chararray);
+DESCRIBE departments;
+
+department_id = FOREACH departments GENERATE (int) $1;
+DUP departments;
+
+
+--- Load Data ino Pig relation with a schema
+departments = LOAD 'user/root/sqoop-import/departments' USING PigStorage(',') AS (department_id:int, departmentName:chararray);
+department_id = FOREACH departments GENERATE department_id;
+DUMP department_id;
+
+--- FILTER Command ---
+filter1 = FILTER climate BY year == 2007;
+DUMP filter1;
+
+filter2 = FILTER climate BY $1 eq 2007;
+DUMP filter2;
+
+filter3 = FILTER climate BY $1 > 2007;
+DUMP filter3;
+
+filter4 = FILTER climate BY $1 < 2007;
+DUMP filter4;
+
+filter3 = FILTER climate BY $1 <gt/lt/eq> 2007;
+DUMP filter3;
+
+filter6 = = FILTER climate BY NOT $1 == 2007;
+DUMP filter6
+
+filter7 = FILTER climate BY $1 IN (2006, 2007);
+DUMP filter7;
+
+--- Matched the records of China & Canada ---
+filter8 = FILTER climate BY country MATCHES 'C.*a';
+DUMP filter8;
+
+--- Matched the records of Indonesia and China ---
+filter9 = FILTER climate BY country MATCHES '.*(done|hin)*.';
+DUMP filter9;
+
+
+--- LIMIT Keyword ---
+limit1 = LIMIT climate 100;
+DUMP limit1;
+
+--- SPLIT Keyword ---
+// minimum 2 relations should be there
+SPLIT climate into B1992 if $1 == 1992, B2002 if $1 == 2002;
+DUMP B1992;
+DUMP B2002;
+
+--- DISTINCT Keyword ---
+distinct1 = DISTINCT redundant1;
+DUMP distinct1;
+
+
+--- SAMPLE Keyword ---
+// will generate some %age of the data present in a relation.
+// below command will generate apporx. 0.2% of the data which is resent in climate relation.
+sample1 = SAMPLE climate 0.2
+DUMP sample1;
+
+--- ORDER Keyword ---
+order1 = ORDER climate BY year asc;
+DUMP order1;
+
+order2 = ORDER climate BY year desc;
+DUMP order2;
+
+order3 = ORDER climate BY year asc, temp desc;
+DUMP order2;
+
+
+--- GROUP BY Commad ---
+group1 = GROUP climate BY year;
+DUMP group1;
+
+grouop2 = GROUP climate BY (year, temp);
+DUMP group2;
+
+
+--- COGROUP Command- like JOINS in SQL---
+// It will combine the similar tuples into one group from 2 or more relations based on grouping coloumn
+cogroup1 = COGROUP a BY a1, b BY b1;
+DUMP cogroup1;
+
+cogroup2 = COGROUP a BY a1 INNER, b BY b1 INNER;
+DUMP cogroup2;
